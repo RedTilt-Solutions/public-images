@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 : "${GITHUB_OWNER:?Missing GITHUB_OWNER}"
 : "${GITHUB_PAT:?Missing GITHUB_PAT}"
 
-: "${RUNNER_NAME_PREFIX:=portainer-org}"
+: "${RUNNER_NAME_PREFIX:=redtilt}"
+: "${RUNNER_GROUP:=private-all}"
 : "${RUNNER_LABELS:=portainer,docker}"
 : "${RUNNER_WORKDIR:=_work}"
-: "${EPHEMERAL:=false}"
+: "${EPHEMERAL:=true}"
+: "${DISABLE_RUNNER_UPDATE:=true}"
 
 GH_URL="https://github.com/${GITHUB_OWNER}"
 REG_TOKEN_URL="https://api.github.com/orgs/${GITHUB_OWNER}/actions/runners/registration-token"
@@ -21,11 +23,11 @@ get_token() {
     -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer ${GITHUB_PAT}" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    "${url}" | jq -r .token
+    "${url}" | jq -r '.token'
 }
 
 cleanup() {
-  echo "Removing runner..."
+  echo "Cleaning up runner registration..."
   if [[ -f .runner ]]; then
     REMOVE_TOKEN="$(get_token "${REMOVE_TOKEN_URL}")" || true
     ./config.sh remove --unattended --token "${REMOVE_TOKEN}" || true
@@ -37,11 +39,14 @@ RUNNER_NAME="${RUNNER_NAME_PREFIX}-$(hostname)"
 REG_TOKEN="$(get_token "${REG_TOKEN_URL}")"
 
 EXTRA_ARGS=()
-if [[ -n "${RUNNER_GROUP:-}" ]]; then
+if [[ -n "${RUNNER_GROUP}" ]]; then
   EXTRA_ARGS+=(--runnergroup "${RUNNER_GROUP}")
 fi
 if [[ "${EPHEMERAL}" == "true" ]]; then
   EXTRA_ARGS+=(--ephemeral)
+fi
+if [[ "${DISABLE_RUNNER_UPDATE}" == "true" ]]; then
+  EXTRA_ARGS+=(--disableupdate)
 fi
 
 ./config.sh \
