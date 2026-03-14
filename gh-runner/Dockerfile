@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     docker.io \
     libicu-dev \
+    libicu78 \
  && rm -rf /var/lib/apt/lists/*
 
  RUN ARCH="$(dpkg --print-architecture)" && \
@@ -29,7 +30,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  curl -fsSL -o actions-runner.tar.gz \
    "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" && \
  tar xzf actions-runner.tar.gz && \
- ./bin/installdependencies.sh && \
  rm -f actions-runner.tar.gz
 
 COPY entrypoint.sh /entrypoint.sh
