@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tar \
     bash \
     docker.io \
+    libicu-dev \
  && rm -rf /var/lib/apt/lists/*
 
 RUN ARCH="$(dpkg --print-architecture)" && \
