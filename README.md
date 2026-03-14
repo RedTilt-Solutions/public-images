@@ -8,7 +8,7 @@ Container images used across the organisation.
 
 Self-hosted GitHub Actions runner for organisation-level workflows. Registers with a GitHub org and runs jobs with Docker-in-Docker support.
 
-**Image:** `ghcr.io/<org>/github-org-runner`  
+**Image:** `ghcr.io/<org>/github-runner`  
 **Tags:** `latest`, git SHA, and tag refs (e.g. `v1.0.0` when a tag is pushed)
 
 #### Required environment variables
