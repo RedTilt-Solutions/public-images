@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     docker.io \
     libicu-dev \
     libicu78 \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Node.js latest LTS for Pact contract tests (@pact-foundation/pact)
