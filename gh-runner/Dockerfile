@@ -18,7 +18,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     docker.io \
     libicu-dev \
     libicu78 \
- && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
+
+# Node.js LTS for Pact JS/TS contract tests (@pact-foundation/pact, pact-cli)
+ARG NODE_VERSION=24
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g @pact-foundation/pact-cli@latest
+
+# Pact standalone CLI (pact-broker, pact-verifier, pact-mock-server, pact-stub-server)
+ARG PACT_CLI_VERSION=v2.5.12
+RUN mkdir -p /opt/pact-install \
+    && cd /opt/pact-install \
+    && curl -fsSL https://raw.githubusercontent.com/pact-foundation/pact-standalone/master/install.sh | PACT_CLI_VERSION=${PACT_CLI_VERSION} bash \
+    && cp -r pact/bin/* /usr/local/bin/ \
+    && cd / \
+    && rm -rf /opt/pact-install
 
  RUN ARCH="$(dpkg --print-architecture)" && \
  case "$ARCH" in \
