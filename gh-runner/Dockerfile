@@ -20,12 +20,41 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu78 \
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js LTS for Pact JS/TS contract tests (@pact-foundation/pact, pact-cli)
+# Node.js latest LTS for Pact contract tests (@pact-foundation/pact)
 ARG NODE_VERSION=24
 RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && npm install -g @pact-foundation/pact-cli@latest
+
+# Go for Pact contract tests (github.com/pact-foundation/pact-go) — latest stable
+ARG GO_VERSION=1.26.1
+RUN ARCH="$(dpkg --print-architecture)" && \
+    case "$ARCH" in \
+        amd64) GO_ARCH="linux-amd64" ;; \
+        arm64) GO_ARCH="linux-arm64" ;; \
+        *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL -o /tmp/go.tgz "https://go.dev/dl/go${GO_VERSION}.${GO_ARCH}.tar.gz" && \
+    tar -C /usr/local -xzf /tmp/go.tgz && \
+    rm /tmp/go.tgz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Java and Maven for Pact contract tests (pact-jvm) — latest LTS
+ARG JAVA_VERSION=21
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openjdk-${JAVA_VERSION}-jdk-headless \
+    maven \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/lib/jvm/java-${JAVA_VERSION}-openjdk-$(dpkg --print-architecture) /usr/lib/jvm/default-java
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+
+# .NET SDK latest LTS for Pact contract tests (Pact.Net)
+RUN curl -fsSL -o /tmp/packages-microsoft-prod.deb \
+    https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb \
+    && dpkg -i /tmp/packages-microsoft-prod.deb && rm /tmp/packages-microsoft-prod.deb \
+    && apt-get update && apt-get install -y --no-install-recommends dotnet-sdk-10.0 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Pact standalone CLI (pact-broker, pact-verifier, pact-mock-server, pact-stub-server)
 ARG PACT_CLI_VERSION=v2.5.12
