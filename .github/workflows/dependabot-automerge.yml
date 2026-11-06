@@ -1,0 +1,29 @@
+name: Dependabot auto-merge
+
+# Approves and merges every Dependabot PR as soon as it opens (this repository has no
+# pull-request checks to wait for), then republishes the runner image.
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+    steps:
+      - name: Approve
+        run: gh pr review "$PR_URL" --approve
+
+      - name: Merge
+        run: gh pr merge "$PR_URL" --squash --delete-branch
+
+      # A merge made with GITHUB_TOKEN doesn't trigger the push-to-main release,
+      # so start it explicitly.
+      - name: Publish the runner image
+        run: gh workflow run release.yml --ref main --repo "$GITHUB_REPOSITORY"

@@ -3,6 +3,7 @@ name: Publish runner image
 on:
   push:
     branches: [main]
+  workflow_dispatch: # started by dependabot-automerge.yml after a dependency merge
 
 permissions:
   contents: read
