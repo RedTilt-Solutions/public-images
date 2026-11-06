@@ -28,7 +28,8 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     groups:
-      actions-non-major:
-        update-types: [minor, patch]
-      actions-major:
-        update-types: [major]
+      # One PR for all action updates. If two were open at once, merging the first would
+      # leave the second behind main on the same workflow file, and GitHub refuses to let
+      # the auto-merge workflow's token merge a workflow change like that.
+      actions:
+        patterns: ["*"]
