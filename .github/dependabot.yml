@@ -1,5 +1,5 @@
-# Dependency updates. Every Dependabot PR is merged automatically and the runner image
-# is republished (see .github/workflows/dependabot-automerge.yml).
+# Dependency updates. Each Dependabot PR is merged automatically once CI has built the
+# runner image, and the image is then republished (see .github/workflows/dependabot-automerge.yml).
 version: 2
 
 updates:
@@ -17,6 +17,7 @@ updates:
         update-types: [minor, patch]
       docker-major:
         update-types: [major]
+    open-pull-requests-limit: 10
 
   - package-ecosystem: github-actions
     directory: /
@@ -32,3 +33,4 @@ updates:
         update-types: [minor, patch]
       actions-major:
         update-types: [major]
+    open-pull-requests-limit: 10

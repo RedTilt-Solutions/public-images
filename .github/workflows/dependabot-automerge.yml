@@ -1,8 +1,11 @@
 name: Dependabot auto-merge
 
-# Approves and merges every Dependabot PR as soon as it opens (this repository has no
-# pull-request checks to wait for), then republishes the runner image.
-on: pull_request
+# Merges a Dependabot PR once every required check has passed, then starts the workflows that
+# normally run on a push to the default branch: merges made with the Actions token don't fire `push`.
+on:
+  workflow_run:
+    workflows: [CI] # every workflow that provides a required check
+    types: [completed]
 
 permissions:
   contents: write
@@ -11,19 +14,33 @@ permissions:
 
 jobs:
   merge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      PR_URL: ${{ github.event.pull_request.html_url }}
+      GH_REPO: ${{ github.repository }}
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
-      - name: Approve
-        run: gh pr review "$PR_URL" --approve
+      - name: Merge the Dependabot PR
+        id: merge
+        run: |
+          pr=$(gh pr list --head "$HEAD_BRANCH" --state open --author app/dependabot --json number --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then echo "No open Dependabot PR for $HEAD_BRANCH."; exit 0; fi
+          # Fails while another required check is pending or failing; its completion retries.
+          if gh pr merge "$pr" --squash --delete-branch --match-head-commit "$HEAD_SHA"; then
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "PR #$pr is not mergeable yet."
+          fi
 
-      - name: Merge
-        run: gh pr merge "$PR_URL" --squash --delete-branch
-
-      # A merge made with GITHUB_TOKEN doesn't trigger the push-to-main release,
-      # so start it explicitly.
-      - name: Publish the runner image
-        run: gh workflow run release.yml --ref main --repo "$GITHUB_REPOSITORY"
+      - name: Run the default-branch workflows
+        if: steps.merge.outputs.merged == 'true'
+        run: |
+          for wf in release.yml; do
+            gh workflow run "$wf" --ref "$DEFAULT_BRANCH"
+          done
